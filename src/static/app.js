@@ -3,15 +3,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const categoryFilter = document.getElementById("category-filter");
+  const sortFilter = document.getElementById("sort-filter");
+  const searchFilter = document.getElementById("search-filter");
+  const applyFiltersBtn = document.getElementById("apply-filters");
 
-  // Function to fetch activities from API
+  // Function to fetch activities from API with filters
   async function fetchActivities() {
     try {
-      const response = await fetch("/activities");
+      let url = "/activities";
+      const params = [];
+      if (categoryFilter && categoryFilter.value) {
+        params.push(`category=${encodeURIComponent(categoryFilter.value)}`);
+      }
+      if (sortFilter && sortFilter.value) {
+        params.push(`sort_by=${encodeURIComponent(sortFilter.value)}`);
+      }
+      if (searchFilter && searchFilter.value) {
+        params.push(`search=${encodeURIComponent(searchFilter.value)}`);
+      }
+      if (params.length > 0) {
+        url += `?${params.join("&")}`;
+      }
+      const response = await fetch(url);
       const activities = await response.json();
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -40,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
+          <p><strong>Category:</strong> ${details.category || "N/A"}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants-container">
@@ -65,6 +85,19 @@ document.addEventListener("DOMContentLoaded", () => {
         "<p>Failed to load activities. Please try again later.</p>";
       console.error("Error fetching activities:", error);
     }
+  }
+
+  // Apply filters button event
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener("click", fetchActivities);
+  }
+  // Also allow pressing Enter in search box to apply filters
+  if (searchFilter) {
+    searchFilter.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        fetchActivities();
+      }
+    });
   }
 
   // Handle unregister functionality
